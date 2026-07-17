@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Список сотрудников{% endblock %}
+
+{% block content %}
+    <h2>Все сотрудники</h2>
+    {% for emp in employees %}
+        <div class="card">
+            <h3>{{ emp.user.first_name }} {{ emp.user.last_name }}</h3>
+            <p>Навыки: 
+                {% for es in emp.employee_skill_set.all %}
+                    {{ es.skill.name }}({{ es.level }}), 
+                {% endfor %}
+            </p>
+            <a href="{% url 'employee_detail' emp.pk %}">Подробнее →</a>
+        </div>
+    {% endfor %}
+{% endblock %}

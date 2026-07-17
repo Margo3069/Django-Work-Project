@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Проект{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <h1>Сотрудники</h1>
+    
+    {% if user.is_authenticated %}
+        <p>Привет, {{ user.username }} | <a href="/logout/">Выйти</a></p>
+    {% else %}
+        <a href="/login/">Войти</a>
+    {% endif %}
+    
+    <hr>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

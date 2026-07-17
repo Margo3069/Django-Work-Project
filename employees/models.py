@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+import os
 
 class Skill(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="Название навыка")
@@ -48,3 +49,18 @@ class EmployeeSkill(models.Model):
         unique_together = ('employee', 'skill')
         verbose_name = "Навык сотрудника"
         verbose_name_plural = "Навыки сотрудников"
+
+
+class EmployeeImage(models.Model):
+    employee = models.ForeignKey(EmployeeProfile, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='employee_photos/')
+    order_number = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order_number']
+
+    def delete(self, *args, **kwargs):
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)

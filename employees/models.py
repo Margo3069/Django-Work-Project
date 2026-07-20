@@ -14,6 +14,11 @@ class Skill(models.Model):
         verbose_name = "Навык"
         verbose_name_plural = "Навыки"
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from datetime import date
+from workplaces.models import Workplace
+
 
 class EmployeeProfile(models.Model):
     GENDER_CHOICES = [
@@ -22,12 +27,20 @@ class EmployeeProfile(models.Model):
         ('O', 'Другой'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Пользователь")
-    patronymic = models.CharField(max_length=50, blank=True, null=True, verbose_name="Отчество")
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, verbose_name="Пол")
-    description = models.TextField(blank=True, verbose_name="Описание / О себе")
-    skills = models.ManyToManyField(Skill, through='EmployeeSkill', related_name='employees', verbose_name="Навыки")
+    ROLE_CHOICES = [
+        ('tester', 'Тестировщик'),
+        ('backend', 'Backend разработчик'),
+        ('frontend', 'Frontend разработчик'),
+    ]
+
+    user = models.OneToOneField('auth.User',on_delete=models.CASCADE,related_name='profile',verbose_name="Пользователь")
+    patronymic = models.CharField(max_length=50,blank=True,null=True,verbose_name="Отчество")
+    gender = models.CharField(max_length=1,choices=GENDER_CHOICES,blank=True,verbose_name="Пол")
+    description = models.TextField(blank=True,verbose_name="Описание / О себе")
+    skills = models.ManyToManyField('Skill',through='EmployeeSkill',related_name='employees',verbose_name="Навыки")
     hire_date = models.DateField(verbose_name="Дата приёма на работу")
+    workplace = models.ForeignKey('workplaces.Workplace',on_delete=models.SET_NULL,null=True,blank=True,verbose_name="Рабочее место")
+    role = models.CharField(max_length=20,choices=ROLE_CHOICES,default='tester',verbose_name="Роль")
 
     @property
     def work_days(self):
@@ -35,30 +48,34 @@ class EmployeeProfile(models.Model):
             return 0
         return (date.today() - self.hire_date).days
 
-    def save(self, *args, **kwargs):
-        if self.workplace:
-            current_table = self.workplace.table_number
-            role = self.role
+    def clean(self):
+        if self.workplace and self.role:
+            try:
+                current_num = int(self.workplace.table_number)
+            except (ValueError, TypeError):
+                raise ValidationError("Номер стола должен быть числом для проверки соседей.")
 
-            is_enemy_role = False
-            if role == 'tester':
-                is_enemy_role = True
-            elif role in ['backend', 'frontend']:
-                is_enemy_role = True
+            neighbor_nums = [current_num - 1, current_num + 1]
 
-            if is_enemy_role:
-                neighbors = EmployeeProfile.objects.filter(
-                    workplace__table_number__in=[current_table - 1, current_table + 1]
-                )
-                for neighbor in neighbors:
-                    n_role = neighbor.role
-                    if (role == 'tester' and n_role in ['backend', 'frontend']) or \
-                    (n_role == 'tester' and role in ['backend', 'frontend']):
-                        raise ValidationError(
-                            f"Нельзя сажать {role} за стол {current_table}, "
-                            f"рядом уже сидит {n_role}."
+            for n in neighbor_nums:
+                try:
+                    neighbor_wp = Workplace.objects.get(table_number=str(n))
+                    neighbor_emp = EmployeeProfile.objects.filter(workplace=neighbor_wp).first()
+                    if neighbor_emp:
+                        is_enemy = (
+                            (self.role in ['backend', 'frontend'] and neighbor_emp.role == 'tester') or
+                            (neighbor_emp.role in ['backend', 'frontend'] and self.role == 'tester')
                         )
-        
+                        if is_enemy:
+                            raise ValidationError(
+                                f"Нельзя сажать {self.get_role_display()} рядом со столом {neighbor_wp.table_number}, "
+                                f"там уже сидит {neighbor_emp.get_role_display()}."
+                            )
+                except Workplace.DoesNotExist:
+                    continue
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

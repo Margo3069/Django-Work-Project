@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 import os
+from django.core.exceptions import ValidationError
+from datetime import date
 
 class Skill(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="Название навыка")
@@ -25,6 +27,39 @@ class EmployeeProfile(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, verbose_name="Пол")
     description = models.TextField(blank=True, verbose_name="Описание / О себе")
     skills = models.ManyToManyField(Skill, through='EmployeeSkill', related_name='employees', verbose_name="Навыки")
+    hire_date = models.DateField(verbose_name="Дата приёма на работу")
+
+    @property
+    def work_days(self):
+        if not self.hire_date:
+            return 0
+        return (date.today() - self.hire_date).days
+
+    def save(self, *args, **kwargs):
+        if self.workplace:
+            current_table = self.workplace.table_number
+            role = self.role
+
+            is_enemy_role = False
+            if role == 'tester':
+                is_enemy_role = True
+            elif role in ['backend', 'frontend']:
+                is_enemy_role = True
+
+            if is_enemy_role:
+                neighbors = EmployeeProfile.objects.filter(
+                    workplace__table_number__in=[current_table - 1, current_table + 1]
+                )
+                for neighbor in neighbors:
+                    n_role = neighbor.role
+                    if (role == 'tester' and n_role in ['backend', 'frontend']) or \
+                    (n_role == 'tester' and role in ['backend', 'frontend']):
+                        raise ValidationError(
+                            f"Нельзя сажать {role} за стол {current_table}, "
+                            f"рядом уже сидит {n_role}."
+                        )
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         full_name = f"{self.user.first_name} {self.user.last_name}"

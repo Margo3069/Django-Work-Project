@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+    <h2>Статистика отдела</h2>
+    
+    <p><strong>Всего сотрудников в базе:</strong> {{ total_count }}</p>
+
+    <hr>
+    <h3>4 последних нанятых сотрудника</h3>
+
+    {% for emp in latest_employees %}
+        <div class="card" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+            <h4>{{ emp.user.first_name }} {{ emp.user.last_name }}</h4>
+            
+            {% if emp.images.all %}
+                <img src="{{ emp.images.first.image.url }}" alt="Фото" style="max-width: 80px; border-radius: 5px;">
+            {% endif %}
+
+            <p><strong>Стаж в компании:</strong> {{ emp.work_days }} дней</p>
+            
+            <p><small>Навыки: </small>
+                {% for skill_item in emp.employee_skill_set.all %}
+                    {{ skill_item.skill.name }}, 
+                {% endfor %}
+            </p>
+        </div>
+    {% endfor %}
+{% endblock %}

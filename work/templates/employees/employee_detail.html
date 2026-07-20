@@ -3,19 +3,32 @@
 
 {% block content %}
     <h2>{{ employee.user.first_name }} {{ employee.user.last_name }}</h2>
-    <p><strong>Пол:</strong> {{ employee.get_gender_display }}</p>
-    
-    <h3>Навыки:</h3>
+
+    {% if employee.images.first %}
+        <img src="{{ employee.images.first.image.url }}" alt="Главное фото" style="max-width: 300px; float: right; margin-left: 20px; border: 2px solid #ddd;">
+    {% endif %}
+
+    <ul>
+        <li><strong>Пол:</strong> {{ employee.get_gender_display }}</li>
+        <li><strong>Номер стола:</strong> {{ employee.workplace.table_number }}</li>
+        <li><strong>Стаж работы:</strong> {{ employee.work_days }} дней</li>
+    </ul>
+
+    <h3>Навыки и уровни</h3>
     <ul>
         {% for es in employee.employee_skill_set.all %}
             <li>{{ es.skill.name }} — уровень {{ es.level }}</li>
         {% endfor %}
     </ul>
 
-    <h3>Галерея:</h3>
-    {% for photo in employee.images.all %}
-        <img src="{{ photo.image.url }}" alt="Фото" style="max-width: 200px; margin-right: 10px;">
-    {% empty %}
-        <p>Фото нет.</p>
-    {% endfor %}
+    <h3>Галерея (остальные фото)</h3>
+    <div style="clear: both; margin-top: 20px;">
+        {% for photo in employee.images.all %}
+            {% if not forloop.first %}  <!-- Пропускаем первое фото, оно уже сверху -->
+                <img src="{{ photo.image.url }}" alt="Доп фото" style="max-width: 120px; margin: 5px; border: 1px solid #eee;">
+            {% endif %}
+        {% empty %}
+            <p>Других фото нет.</p>
+        {% endfor %}
+    </div>
 {% endblock %}

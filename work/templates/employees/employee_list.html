@@ -15,3 +15,8 @@
         </div>
     {% endfor %}
 {% endblock %}
+        <p>Стаж: {{ emp.work_days }} дн.</p>
+
+        {% if emp.images.first %}
+            <img src="{{ emp.images.first.image.url }}" style="max-width: 60px;">
+        {% endif %}

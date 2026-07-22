@@ -21,14 +21,18 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from employees.views import home_view
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
 path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
 path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 path('admin/', admin.site.urls),
-    path('', home_view, name='home'),
-    path('employees/', include('employees.urls')),
+path('', home_view, name='home'),
+path('employees/', include('employees.urls')),
+path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+path('api/', include('employees.urls')),
 ]
 
 if settings.DEBUG:

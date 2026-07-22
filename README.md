@@ -35,3 +35,25 @@ pip install -r requirements.txt
 - `employees/models.py` — тут модели про сотрудников и навыки.
 - `workplaces/models.py` — тут модель про рабочее место.
 - `admin.py` в обеих папках — настройка админки.
+
+
+# Django DRF + Swagger + Docker
+
+Учебный проект: API сотрудников с автодокументацией, CORS и запуском через Docker Compose.
+
+## Порядок запуска (К4)
+
+1. Убедись, что у тебя установлен Docker и Docker Compose.
+2. В корне проекта (где лежит docker-compose.yml) запусти:
+   ```bash
+   docker-compose up --build
+   
+## Зависимости проекта
+
+Все необходимые библиотеки перечислены в файле `requirements.txt`.
+
+При запуске через Docker Compose они автоматически устанавливаются на этапе сборки образа (команда `docker-compose up --build`).
+
+Если вы запускаете проект локально (без Docker), установите зависимости командой:
+```bash
+pip install -r requirements.txt

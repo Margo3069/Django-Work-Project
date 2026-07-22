@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: employees_db
+      POSTGRES_USER: margarita
+      POSTGRES_PASSWORD: margarita123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://margarita:margarita123@db:5432/employees_db
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
